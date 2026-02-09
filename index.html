@@ -83,17 +83,20 @@
     .girlWrap{
       display:flex;
       justify-content:center;
-      align-items:flex-end;
-      height: 560px;
+      align-items:center;
+      height:min(560px, calc(100vh - 220px));
     }
     #girl{
-      width:min(460px, 90%);
-      height:auto;
+      width:auto;
+      max-width:min(460px, 90%);
+      height:100%;
+      max-height:100%;
+      object-fit:contain;
       image-rendering:auto;
-      filter: drop-shadow(0 10px 40px rgba(0,0,0,.55));
-      transition: transform .15s ease;
+      filter: drop-shadow(0 12px 40px rgba(0,0,0,.55));
+      transition: transform .12s ease;
       user-select:none;
-      -webkit-user-drag:none;
+      pointer-events:none;
     }
     .bubble{
       margin-top: 10px;
@@ -135,6 +138,7 @@
       user-select:none;
     }
     .btn:hover{background: rgba(0,0,0,.26)}
+    .btn.active{box-shadow:0 0 0 2px rgba(111,249,152,.35) inset;border-color:rgba(111,249,152,.65);}
     .btn:active{transform: translateY(1px)}
     .btn.primary{border-color: rgba(182,255,46,.28);background: rgba(182,255,46,.10)}
     .btn.danger{border-color: rgba(255,77,77,.28);background: rgba(255,77,77,.08)}
@@ -278,6 +282,14 @@
                 <input id="rate" type="range" min="0.1" max="2" step="0.05" value="1.05" />
               </div>
 
+              <div class="field col12">
+                <div class="row">
+                  <button class="btn" type="button" id="btnAnimeVoice">🎀 Аниме‑режим</button>
+                  <button class="btn" type="button" id="btnPreviewVoice">▶️ Пример голоса</button>
+                </div>
+                <div class="microhint" id="voiceHint">Голоса зависят от браузера и установленных голосов в системе.</div>
+              </div>
+
               <div class="field col6 inline">
                 <input id="enableTTS" type="checkbox" checked />
                 <label for="enableTTS">Озвучивать ответы</label>
@@ -339,6 +351,10 @@
   const rateEl = el("rate");
   const enableTTSEl = el("enableTTS");
   const showDebugEl = el("showDebug");
+
+  const btnAnimeVoice = el("btnAnimeVoice");
+  const btnPreviewVoice = el("btnPreviewVoice");
+  const voiceHintEl = el("voiceHint");
 
   // ===============================
   // 2) Состояние
@@ -425,6 +441,52 @@
     setGirl("idle");
   }
 
+  function updateVoiceHint(){
+    try{
+      const v = getSelectedVoice();
+      const list = speechSynthesis.getVoices() || [];
+      if(!voiceHintEl) return;
+      if(!list.length){ voiceHintEl.textContent = "Список голосов ещё загружается…"; return; }
+      if(!v){ voiceHintEl.textContent = `Голоса: ${list.length}. Выбран голос: (не выбран)`; return; }
+      voiceHintEl.textContent = `Голоса: ${list.length}. Выбран: ${v.name} (${v.lang})`;
+    }catch(_){ /* ignore */ }
+  }
+
+  function pickAnimeVoice(force=false){
+    // В браузере нет стандарта «аниме‑голоса». Мы выбираем самый подходящий из доступных системных голосов.
+    const list = speechSynthesis.getVoices() || [];
+    if(!list.length) return false;
+    const saved = localStorage.getItem(LS.voiceURI);
+    if(!force && saved) return false;
+
+    const ru = list.filter(v => (v.lang||"" ).toLowerCase().startsWith("ru"));
+    const hints = /(irina|tatyana|oksana|anna|maria|alena|katya|daria|vera|olga|yandex|google|microsoft|жен|female)/i;
+    const pick = (arr) => arr.find(v => hints.test(v.name)) || arr[0];
+    let v = pick(ru) || pick(list);
+
+    if(v){
+      voiceSelect.value = v.voiceURI;
+      localStorage.setItem(LS.voiceURI, v.voiceURI);
+      // «Милее» за счёт параметров, но без сильного искажения
+      pitchEl.value = String(1.18);
+      rateEl.value = String(1.05);
+      localStorage.setItem(LS.pitch, pitchEl.value);
+      localStorage.setItem(LS.rate, rateEl.value);
+      updateTTSLabels();
+      updateVoiceHint();
+      return true;
+    }
+    return false;
+  }
+
+  function previewVoice(){
+    if(!enableTTSEl.checked){
+      sys("Включи озвучку (TTS), чтобы прослушать голос.");
+      return;
+    }
+    speakText("Привет! Я Альт-девочка. Как настроение?");
+  }
+
   function getSelectedVoice(){
     const uri = voiceSelect.value;
     const list = speechSynthesis.getVoices();
@@ -478,6 +540,11 @@
     } else if(ordered.length){
       voiceSelect.value = ordered[0].voiceURI;
     }
+
+    if(!saved){
+      pickAnimeVoice(false);
+    }
+    updateVoiceHint();
   }
 
   // ===============================
@@ -617,47 +684,85 @@
   function setupSTT(){
     const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
     if(!SR){
-      envHintEl.innerHTML = "<b>Распознавание речи:</b> недоступно в этом браузере. Микрофон‑режим работать не будет.";
+      envHintEl.innerHTML = '<b>Распознавание речи:</b> недоступно в этом браузере. Используй Chrome/Edge или ввод текста.';
       btnMic.disabled = true;
       return;
     }
 
     recognizer = new SR();
-    recognizer.lang = "ru-RU";
-    recognizer.interimResults = false;
+    recognizer.lang = 'ru-RU';
+    recognizer.interimResults = true;
+    recognizer.continuous = false;
     recognizer.maxAlternatives = 1;
 
+    let sttGotFinal = false;
+    let sttLastError = '';
+
     recognizer.onstart = () => {
+      sttGotFinal = false;
+      sttLastError = '';
       micOn = true;
-      btnMic.textContent = "🎙️ Слушаю… (нажми, чтобы стоп)";
-      setStatus("Слушаю…", "busy");
+      stopTTS();
+      setGirl('talk');
+      btnMic.classList.add('active');
+      btnMic.textContent = '🎙️ Слушаю… (клик = стоп)';
+      setStatus('Слушаю…', 'busy');
     };
 
     recognizer.onend = () => {
       micOn = false;
-      btnMic.textContent = "🎙️ Микрофон";
-      setStatus("Готово.", lastWorkerOk ? "ok" : "neutral");
+      btnMic.classList.remove('active');
+      btnMic.textContent = '🎙️ Микрофон';
+      setGirl('idle');
+      if(!sttGotFinal && !sttLastError){
+        sys('Ничего не распозналось. Проверь доступ к микрофону и попробуй говорить ближе/громче.');
+      }
+      setStatus('Готово.', lastWorkerOk ? 'ok' : 'neutral');
     };
 
     recognizer.onerror = (ev) => {
+      sttLastError = (ev && ev.error) ? ev.error : 'unknown';
       micOn = false;
-      btnMic.textContent = "🎙️ Микрофон";
-      setStatus("STT ошибка ❌", "bad");
+      btnMic.classList.remove('active');
+      btnMic.textContent = '🎙️ Микрофон';
+      setGirl('idle');
+      setStatus('STT ошибка ❌', 'bad');
+
+      const map = {
+        'no-speech': 'Не услышал речь (no-speech).',
+        'audio-capture': 'Микрофон недоступен (audio-capture).',
+        'not-allowed': 'Запрещён доступ к микрофону (not-allowed).',
+        'service-not-allowed': 'Сервис распознавания недоступен (service-not-allowed).'
+      };
+      sys((map[sttLastError] || ('Ошибка распознавания: ' + sttLastError)) + ' Если ты в Firefox — распознавание может не поддерживаться.');
       if(showDebugEl.checked){
-        err("STT error: " + (ev && ev.error ? ev.error : "unknown"));
+        err('STT error: ' + sttLastError);
       }
     };
 
     recognizer.onresult = (ev) => {
       try{
-        const t = ev.results && ev.results[0] && ev.results[0][0] && ev.results[0][0].transcript;
-        if(t){
-          sendText(t);
+        let interim = '';
+        let final = '';
+        for(let i=ev.resultIndex; i<ev.results.length; i++){
+          const res = ev.results[i];
+          const txt = (res && res[0] && res[0].transcript) ? res[0].transcript : '';
+          if(res.isFinal) final += txt;
+          else interim += txt;
+        }
+
+        if(interim && interim.trim()){
+          inputText.value = interim.trim();
+        }
+        if(final && final.trim()){
+          sttGotFinal = true;
+          inputText.value = final.trim();
+          sendText(final.trim());
         }
       }catch(_){ }
     };
 
-    envHintEl.innerHTML = "<b>Подсказка:</b> URL воркера должен отдавать <code>/health</code> и <code>/chat</code>. Для проверки нажми «Проверить подключение».";
+    envHintEl.innerHTML = '<b>Подсказка:</b> Для голосового ввода нужен браузер с Web Speech API. URL воркера должен отвечать на <code>/health</code> и <code>/chat</code>.';
   }
 
   function toggleMic(){
@@ -666,7 +771,12 @@
       try{ recognizer.stop(); }catch(_){ }
       return;
     }
-    try{ recognizer.start(); }catch(_){ }
+    try{ recognizer.start(); }catch(e){
+      sys('Не удалось запустить микрофон. Проверь разрешения браузера.');
+      if(showDebugEl.checked){
+        err('STT start error: ' + (e && e.message ? e.message : 'unknown'));
+      }
+    }
   }
 
   // ===============================
@@ -700,7 +810,18 @@
   enableTTSEl.addEventListener("change", () => localStorage.setItem(LS.enableTTS, enableTTSEl.checked ? "1" : "0"));
   pitchEl.addEventListener("change", () => localStorage.setItem(LS.pitch, String(pitchEl.value)));
   rateEl.addEventListener("change", () => localStorage.setItem(LS.rate, String(rateEl.value)));
-  voiceSelect.addEventListener("change", () => localStorage.setItem(LS.voiceURI, voiceSelect.value));
+  voiceSelect.addEventListener("change", () => {
+    localStorage.setItem(LS.voiceURI, voiceSelect.value);
+    updateVoiceHint();
+  });
+
+  btnAnimeVoice?.addEventListener("click", () => {
+    const v = pickAnimeVoice(true);
+    updateVoiceHint();
+    sys(v ? ("Аниме‑режим включён: " + v.name + " (" + v.lang + ").") : "Не удалось выбрать голос: браузер не вернул список голосов.");
+  });
+
+  btnPreviewVoice?.addEventListener("click", () => previewVoice());
   showDebugEl.addEventListener("change", () => localStorage.setItem(LS.showDebug, showDebugEl.checked ? "1" : "0"));
 
   // ===============================
