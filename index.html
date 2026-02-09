@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Альт-девочка — голосовой чат</title>
+  <title>Альт-девочка — умный голосовой чат</title>
   <style>
     :root{
       --bg1:#06070b;
@@ -21,7 +21,6 @@
       --radius:20px;
       --radius2:16px;
     }
-
     *{box-sizing:border-box}
     html,body{height:100%}
     body{
@@ -34,277 +33,127 @@
         linear-gradient(160deg, var(--bg1), var(--bg2));
       overflow-x:hidden;
     }
-
     .wrap{max-width:1180px;margin:0 auto;padding:22px 18px 34px}
-
-    .top{
-      display:flex;
-      align-items:flex-start;
-      justify-content:space-between;
-      gap:18px;
-      margin-bottom:14px;
-    }
-
-    .title{
-      display:flex;align-items:center;gap:10px;
-      font-weight:700;
-      letter-spacing:.2px;
-    }
+    .top{display:flex;align-items:flex-start;justify-content:space-between;gap:18px;margin-bottom:14px}
+    .title{display:flex;align-items:center;gap:10px;font-weight:700;letter-spacing:.2px}
     .dot{width:8px;height:8px;border-radius:99px;background:var(--accent);box-shadow:0 0 20px rgba(177,118,255,.65)}
-
     .subtitle{font-size:12px;color:var(--muted);margin-top:4px}
-
     .statusPill{
-      display:inline-flex;
-      align-items:center;
-      gap:10px;
-      padding:10px 14px;
-      border:1px solid var(--stroke);
-      border-radius:999px;
-      background:rgba(0,0,0,.18);
-      min-width:240px;
-      justify-content:center;
+      display:inline-flex;align-items:center;gap:10px;
+      padding:10px 14px;border:1px solid var(--stroke);border-radius:999px;
+      background:rgba(0,0,0,.18);min-width:240px;justify-content:center;
     }
     .led{width:10px;height:10px;border-radius:99px;background:rgba(255,255,255,.2)}
     .led.ok{background:var(--ok);box-shadow:0 0 18px rgba(35,209,139,.5)}
     .led.bad{background:var(--danger);box-shadow:0 0 18px rgba(255,91,91,.45)}
-
-    .grid{
-      display:grid;
-      grid-template-columns: 1.2fr .8fr;
-      gap:16px;
-      align-items:stretch;
-    }
-
+    .grid{display:grid;grid-template-columns: 1.2fr .8fr;gap:16px;align-items:stretch}
     @media (max-width: 980px){
       .grid{grid-template-columns:1fr;}
       .statusPill{min-width:auto;width:100%}
     }
-
-    .card{
-      background:var(--card);
-      border:1px solid var(--stroke);
-      border-radius:var(--radius);
-      box-shadow:var(--shadow);
-      overflow:hidden;
-    }
-
-    .stage{
-      min-height:680px;
-      padding:18px;
-      display:flex;
-      flex-direction:column;
-      gap:12px;
-    }
-
+    .card{background:var(--card);border:1px solid var(--stroke);border-radius:var(--radius);box-shadow:var(--shadow);overflow:hidden}
+    .stage{min-height:680px;padding:18px;display:flex;flex-direction:column;gap:12px}
     .stageVisual{
-      flex:1;
-      min-height:520px;
-      display:flex;
-      flex-direction:column;
-      border:1px solid rgba(255,255,255,.08);
-      border-radius:var(--radius2);
+      flex:1;min-height:520px;display:flex;flex-direction:column;
+      border:1px solid rgba(255,255,255,.08);border-radius:var(--radius2);
       background:linear-gradient(180deg, rgba(0,0,0,.22), rgba(0,0,0,.06));
       overflow:hidden;
     }
-
-    /* Вьюпорт для персонажа — чтобы не "уезжала" и всегда влезала */
     .girlViewport{
-      position:relative;
-      flex:1;
-      display:flex;
-      align-items:center;
-      justify-content:center;
-      padding:14px 10px;
-      overflow:hidden;
-      min-height:520px;
+      position:relative;flex:1;display:flex;align-items:center;justify-content:center;
+      padding:14px 10px;overflow:hidden;min-height:520px;
     }
     #girl{
-      position:absolute;
-      left:50%;
-      top:50%;
+      position:absolute;left:50%;top:50%;
       transform:translate(-50%,-50%);
-      max-width:95%;
-      max-height:100%;
-      width:auto;
-      height:auto;
+      max-width:95%;max-height:100%;width:auto;height:auto;
       filter: drop-shadow(0 18px 28px rgba(0,0,0,.5));
-      user-select:none;
-      pointer-events:none;
+      user-select:none;pointer-events:none;
     }
-
     .stageBar{
       border-top:1px solid rgba(255,255,255,.07);
-      padding:10px 12px;
-      display:flex;
-      align-items:center;
-      gap:10px;
-      justify-content:space-between;
-      background:rgba(0,0,0,.18);
+      padding:10px 12px;display:flex;align-items:center;gap:10px;
+      justify-content:space-between;background:rgba(0,0,0,.18);
     }
-
     .bubbleSmall{
       max-width:75%;
-      padding:10px 12px;
-      border-radius:18px;
+      padding:10px 12px;border-radius:18px;
       background:rgba(177,118,255,.18);
       border:1px solid rgba(177,118,255,.28);
       color:rgba(233,236,255,.95);
-      font-size:14px;
-      line-height:1.25;
-      white-space:pre-wrap;
+      font-size:14px;line-height:1.25;white-space:pre-wrap;
     }
-
-    .panel{
-      min-height:680px;
-      display:flex;
-      flex-direction:column;
-    }
-
+    .panel{min-height:680px;display:flex;flex-direction:column}
     .panelTop{
-      padding:14px 14px 10px;
-      border-bottom:1px solid rgba(255,255,255,.08);
-      background:rgba(0,0,0,.14);
-      display:flex;
-      gap:10px;
-      align-items:center;
-      justify-content:space-between;
+      padding:14px 14px 10px;border-bottom:1px solid rgba(255,255,255,.08);
+      background:rgba(0,0,0,.14);display:flex;gap:10px;align-items:center;justify-content:space-between;
     }
-
     .btnRow{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
-
     button{
-      appearance:none;
-      border:1px solid rgba(255,255,255,.12);
-      background:rgba(0,0,0,.18);
-      color:var(--text);
-      padding:10px 12px;
-      border-radius:14px;
-      cursor:pointer;
-      font-weight:600;
+      appearance:none;border:1px solid rgba(255,255,255,.12);
+      background:rgba(0,0,0,.18);color:var(--text);
+      padding:10px 12px;border-radius:14px;cursor:pointer;font-weight:600;
       transition:transform .06s ease, background .15s ease, border-color .15s ease;
       user-select:none;
     }
     button:hover{background:rgba(255,255,255,.06);border-color:rgba(255,255,255,.18)}
     button:active{transform:translateY(1px)}
-
+    button:disabled{opacity:.55;cursor:not-allowed}
     .btnOk{border-color:rgba(35,209,139,.35)}
     .btnOk:hover{background:rgba(35,209,139,.10)}
-
     .btnWarn{border-color:rgba(255,209,102,.35)}
     .btnWarn:hover{background:rgba(255,209,102,.12)}
-
     .btnDanger{border-color:rgba(255,91,91,.35)}
     .btnDanger:hover{background:rgba(255,91,91,.10)}
-
-    .panelBody{
-      padding:14px;
-      display:flex;
-      flex-direction:column;
-      gap:12px;
-      overflow:auto;
-      flex:1;
-    }
-
-    .section{
-      border:1px solid rgba(255,255,255,.08);
-      border-radius:var(--radius2);
-      background:var(--card2);
-      overflow:hidden;
-    }
-
+    .panelBody{padding:14px;display:flex;flex-direction:column;gap:12px;overflow:auto;flex:1}
+    .section{border:1px solid rgba(255,255,255,.08);border-radius:var(--radius2);background:var(--card2);overflow:hidden}
     .sectionHead{
-      padding:10px 12px;
-      display:flex;
-      justify-content:space-between;
-      align-items:center;
-      gap:10px;
-      cursor:pointer;
-      user-select:none;
-      background:rgba(0,0,0,.16);
+      padding:10px 12px;display:flex;justify-content:space-between;align-items:center;gap:10px;
+      cursor:pointer;user-select:none;background:rgba(0,0,0,.16);
       border-bottom:1px solid rgba(255,255,255,.06);
-      color:rgba(233,236,255,.9);
-      font-weight:700;
-      font-size:13px;
+      color:rgba(233,236,255,.9);font-weight:700;font-size:13px;
     }
-
     .sectionContent{padding:12px;display:none;gap:10px;flex-direction:column}
     .section.open .sectionContent{display:flex}
-
     label{font-size:12px;color:var(--muted)}
-    select,input[type="text"],input[type="range"]{
-      width:100%;
-      padding:10px 10px;
-      border-radius:12px;
+    select,input[type="text"],input[type="range"],textarea{
+      width:100%;padding:10px 10px;border-radius:12px;
       border:1px solid rgba(255,255,255,.12);
-      background:rgba(0,0,0,.18);
-      color:var(--text);
-      outline:none;
+      background:rgba(0,0,0,.18);color:var(--text);outline:none;
     }
-
+    textarea{min-height:74px;resize:vertical}
     .row{display:grid;grid-template-columns:1fr 1fr;gap:10px}
     @media (max-width: 980px){ .row{grid-template-columns:1fr} }
-
     .msg{display:flex;flex-direction:column;gap:4px}
     .meta{font-size:11px;color:rgba(233,236,255,.55)}
     .bubble{
-      display:inline-block;
-      padding:10px 12px;
-      border-radius:16px;
-      border:1px solid rgba(255,255,255,.10);
-      background:rgba(0,0,0,.18);
-      max-width:85%;
-      white-space:pre-wrap;
-      line-height:1.28;
-      font-size:14px;
+      display:inline-block;padding:10px 12px;border-radius:16px;
+      border:1px solid rgba(255,255,255,.10);background:rgba(0,0,0,.18);
+      max-width:85%;white-space:pre-wrap;line-height:1.28;font-size:14px;
     }
     .bubble.user{margin-left:auto;background:rgba(35,209,139,.10);border-color:rgba(35,209,139,.20)}
     .bubble.bot{margin-right:auto;background:rgba(177,118,255,.12);border-color:rgba(177,118,255,.18)}
-
+    .bubble.sys{margin-right:auto;background:rgba(255,91,91,.10);border-color:rgba(255,91,91,.18)}
     .inputRow{
       display:flex;gap:8px;align-items:center;
-      padding:12px 14px;
-      border-top:1px solid rgba(255,255,255,.08);
+      padding:12px 14px;border-top:1px solid rgba(255,255,255,.08);
       background:rgba(0,0,0,.14);
     }
     .inputRow input{flex:1}
-
     .hint{font-size:12px;color:rgba(233,236,255,.55);line-height:1.3}
-
     .kbd{font-family:ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace; font-size:11px; padding:2px 6px; border:1px solid rgba(255,255,255,.14); border-radius:8px; background:rgba(0,0,0,.22)}
-
     .toast{
-      position:fixed;
-      right:14px;
-      bottom:14px;
-      padding:10px 12px;
-      border-radius:14px;
-      border:1px solid rgba(255,255,255,.12);
-      background:rgba(0,0,0,.5);
-      color:rgba(233,236,255,.92);
+      position:fixed;right:14px;bottom:14px;padding:10px 12px;border-radius:14px;
+      border:1px solid rgba(255,255,255,.12);background:rgba(0,0,0,.5);color:rgba(233,236,255,.92);
       box-shadow:0 20px 60px rgba(0,0,0,.6);
       max-width:min(460px, calc(100vw - 28px));
-      display:none;
-      z-index:50;
+      display:none;z-index:50;
     }
-
-    .pill{
-      display:inline-flex;align-items:center;gap:8px;
-      padding:8px 10px;
-      border-radius:999px;
-      border:1px solid rgba(255,255,255,.12);
-      background:rgba(0,0,0,.18);
-      color:rgba(233,236,255,.86);
-      font-size:12px;
-    }
-
-    .switch{
-      display:flex;align-items:center;gap:10px;
-      font-size:12px;color:rgba(233,236,255,.78)
-    }
+    .pill{display:inline-flex;align-items:center;gap:8px;padding:8px 10px;border-radius:999px;border:1px solid rgba(255,255,255,.12);background:rgba(0,0,0,.18);color:rgba(233,236,255,.86);font-size:12px}
+    .switch{display:flex;align-items:center;gap:10px;font-size:12px;color:rgba(233,236,255,.78)}
     .switch input{width:18px;height:18px}
-
     .mono{font-family:ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;}
+    .mini{font-size:11px;color:rgba(233,236,255,.60)}
   </style>
 </head>
 <body>
@@ -321,7 +170,6 @@
     </div>
 
     <div class="grid">
-      <!-- LEFT: персонаж + мини-реплика -->
       <div class="card">
         <div class="stage">
           <div class="stageVisual">
@@ -336,14 +184,14 @@
         </div>
       </div>
 
-      <!-- RIGHT: чат + настройки -->
       <div class="card panel">
         <div class="panelTop">
           <div class="btnRow">
             <button class="btnOk" id="micBtn" title="Речь -> текст">🎙 Микрофон</button>
             <button id="stopVoiceBtn" title="Остановить озвучку">⏹ Стоп голос</button>
-            <button class="btnOk" id="healthBtn" title="Проверить /health">✅ Проверить подключение</button>
-            <button class="btnWarn" id="clearBtn">🧹 Очистить чат</button>
+            <button class="btnOk" id="healthBtn" title="Проверить /health">✅ Проверить</button>
+            <button class="btnWarn" id="cancelBtn" title="Остановить текущий запрос" disabled>🛑 Стоп ответ</button>
+            <button class="btnWarn" id="clearBtn">🧹 Очистить</button>
           </div>
           <div class="pill mono" id="modePill">режим: текст</div>
         </div>
@@ -351,13 +199,32 @@
         <div class="panelBody" id="chatBody">
           <div class="section open" id="settingsSection">
             <div class="sectionHead" id="settingsHead">
-              <span>⚙ Настройки (Workers AI, голос, диагностика)</span>
+              <span>⚙ Настройки (модель, голос, диагностика)</span>
               <span class="mono" id="settingsChevron">▾</span>
             </div>
             <div class="sectionContent">
               <div>
                 <label>Worker base URL</label>
                 <input id="apiBase" type="text" value="https://girl-chat.sadreevuz.workers.dev" />
+              </div>
+
+              <div class="row">
+                <div>
+                  <label>LLM-модель</label>
+                  <select id="modelSelect">
+                    <option value="@cf/meta/llama-3.3-70b-instruct-fp8-fast" selected>Llama 3.3 70B (качество)</option>
+                    <option value="@cf/meta/llama-3.1-8b-instruct-fast">Llama 3.1 8B Fast (дешевле)</option>
+                  </select>
+                  <div class="mini">Совет: для «самое умное» оставь 70B. Для экономии — 8B.</div>
+                </div>
+                <div>
+                  <label>Ответ потоком (SSE)</label>
+                  <select id="streamMode">
+                    <option value="on" selected>Включено (быстрее ощущается)</option>
+                    <option value="off">Выключено</option>
+                  </select>
+                  <div class="mini">Если включён поток — текст «печатается» по мере генерации.</div>
+                </div>
               </div>
 
               <div class="row">
@@ -369,7 +236,7 @@
                   </select>
                 </div>
                 <div>
-                  <label>Язык распознавания</label>
+                  <label>Язык распознавания (STT)</label>
                   <select id="sttLang">
                     <option value="ru-RU" selected>ru-RU</option>
                     <option value="en-US">en-US</option>
@@ -396,11 +263,17 @@
 
               <div class="switch">
                 <input type="checkbox" id="autoSendVoice" checked />
-                <label for="autoSendVoice">После диктовки сразу отправлять сообщение</label>
+                <label for="autoSendVoice">После диктовки сразу отправлять</label>
+              </div>
+
+              <div>
+                <label>Память-профиль (локально в браузере)</label>
+                <textarea id="profileMem" placeholder="Например: Имя: Тимур. Любит короткие ответы. Тема: монтаж / крипта."></textarea>
+                <div class="mini">Это добавляется к контексту и хранится в localStorage на этом устройстве.</div>
               </div>
 
               <div class="hint">
-                Если распознавание в браузере недоступно, включится запасной вариант: запись аудио → отправка в воркер → Whisper STT.
+                Если диктовка в браузере недоступна — сработает запасной вариант: запись аудио → отправка в воркер → Whisper STT.
               </div>
             </div>
           </div>
@@ -413,12 +286,12 @@
             <div class="sectionContent" id="logBox" style="gap:8px"></div>
           </div>
 
-          <div class="section" id="chatSection">
+          <div class="section open" id="chatSection">
             <div class="sectionHead" id="chatHead">
               <span>💬 Чат</span>
-              <span class="mono" id="chatChevron">▸</span>
+              <span class="mono" id="chatChevron">▾</span>
             </div>
-            <div class="sectionContent" style="display:flex" id="messagesBox"></div>
+            <div class="sectionContent" id="messagesBox"></div>
           </div>
         </div>
 
@@ -426,9 +299,10 @@
           <input id="msgInput" type="text" placeholder="Напиши сообщение… (Enter — отправить)" />
           <button class="btnOk" id="sendBtn">Отправить</button>
         </div>
+
         <div style="padding:0 14px 14px">
           <div class="hint">
-            Если диктовка не работает в браузере — проверь разрешение на микрофон. Для Firefox веб-распознавание речи часто недоступно.
+            Подсказка: <span class="kbd">Enter</span> — отправить, <span class="kbd">Shift</span>+<span class="kbd">Enter</span> — новая строка (если поменяешь input на textarea).
           </div>
         </div>
       </div>
@@ -441,22 +315,26 @@
     // -------------------- UI helpers --------------------
     const $ = (id) => document.getElementById(id);
 
-    const statusPill = $("statusPill");
     const led = $("led");
     const statusText = $("statusText");
     const modePill = $("modePill");
 
     const apiBaseEl = $("apiBase");
+    const modelSelectEl = $("modelSelect");
+    const streamModeEl = $("streamMode");
+
     const sttLangEl = $("sttLang");
     const ttsModeEl = $("ttsMode");
     const voiceSelectEl = $("voiceSelect");
     const pitchEl = $("pitch");
     const rateEl = $("rate");
     const autoSendVoiceEl = $("autoSendVoice");
+    const profileMemEl = $("profileMem");
 
     const micBtn = $("micBtn");
     const stopVoiceBtn = $("stopVoiceBtn");
     const healthBtn = $("healthBtn");
+    const cancelBtn = $("cancelBtn");
     const clearBtn = $("clearBtn");
 
     const msgInput = $("msgInput");
@@ -484,12 +362,6 @@
       toastTimer = setTimeout(() => { toast.style.display = 'none'; }, 2400);
     }
 
-    function toggleSection(sectionId){
-      const section = $(sectionId);
-      section.classList.toggle('open');
-      const chevron = section.querySelector('.sectionHead + .sectionContent') ? section.querySelector('.sectionHead').nextElementSibling : null;
-    }
-
     function makeSectionToggle(sectionId, headId, chevronId){
       const section = $(sectionId);
       const head = $(headId);
@@ -500,13 +372,13 @@
         chev.textContent = isOpen ? '▾' : '▸';
       });
     }
-
     makeSectionToggle('settingsSection','settingsHead','settingsChevron');
     makeSectionToggle('logSection','logHead','logChevron');
     makeSectionToggle('chatSection','chatHead','chatChevron');
 
-    // -------------------- Chat state ("обучение" как память сессии) --------------------
-    const STORAGE_KEY = 'altgirl.chat.v2';
+    // -------------------- Local memory --------------------
+    const STORAGE_KEY = 'altgirl.chat.v3';
+    const PROFILE_KEY = 'altgirl.profile.v1';
     let history = [];
 
     function loadHistory(){
@@ -521,19 +393,19 @@
         }
       }catch{}
     }
-
     function saveHistory(){
       try{ localStorage.setItem(STORAGE_KEY, JSON.stringify(history.slice(-30))); }catch{}
     }
-
-    function renderHistory(){
-      messagesBox.innerHTML = '';
-      for (const m of history){
-        addMsg(m.role === 'user' ? 'Ты' : 'она', m.content, m.role === 'user' ? 'user' : 'bot', false);
-      }
-      // автоскролл
-      messagesBox.parentElement.scrollTop = messagesBox.parentElement.scrollHeight;
+    function loadProfile(){
+      try{
+        const raw = localStorage.getItem(PROFILE_KEY);
+        if (raw) profileMemEl.value = raw;
+      }catch{}
     }
+    function saveProfile(){
+      try{ localStorage.setItem(PROFILE_KEY, String(profileMemEl.value || '')); }catch{}
+    }
+    profileMemEl.addEventListener('input', () => saveProfile());
 
     function pushHistory(role, content){
       history.push({ role, content });
@@ -565,17 +437,26 @@
       if (alsoStage && cls === 'bot'){
         stageBubble.textContent = text;
       }
-      if (cls === 'bot'){
-        // смена эмоции по тексту (простая эвристика)
-        const lower = text.toLowerCase();
-        const excited = lower.includes('!') || lower.includes('ха') || lower.includes('хаха') || lower.includes('эмодзи') || lower.includes('😄') || lower.includes('✨');
-        girlImg.src = excited ? './gril2.png' : './gril1.png';
-      }
+      return { wrap, bub };
     }
 
-    // -------------------- Network --------------------
+    function renderHistory(){
+      messagesBox.innerHTML = '';
+      for (const m of history){
+        addMsg(m.role === 'user' ? 'Ты' : 'она', m.content, m.role === 'user' ? 'user' : 'bot', false);
+      }
+      messagesBox.parentElement.scrollTop = messagesBox.parentElement.scrollHeight;
+    }
+
+    // -------------------- Network helpers --------------------
     function apiBase(){
       return (apiBaseEl.value || '').trim().replace(/\/$/,'');
+    }
+
+    function setStatus(ok, text){
+      statusText.textContent = text;
+      led.classList.remove('ok','bad');
+      led.classList.add(ok ? 'ok' : 'bad');
     }
 
     async function checkHealth(){
@@ -596,13 +477,7 @@
       }
     }
 
-    function setStatus(ok, text){
-      statusText.textContent = text;
-      led.classList.remove('ok','bad');
-      led.classList.add(ok ? 'ok' : 'bad');
-    }
-
-    // -------------------- TTS (браузер) --------------------
+    // -------------------- TTS --------------------
     let voiceReady = false;
     let allVoices = [];
 
@@ -621,7 +496,6 @@
         opt.textContent = `${v.name} (${v.lang})`;
         voiceSelectEl.appendChild(opt);
       }
-
       voiceReady = true;
     }
 
@@ -633,14 +507,10 @@
       if (selected && selected !== '__auto__'){
         return allVoices.find(v => v.name === selected) || null;
       }
-
-      // Автовыбор: сначала пытаемся найти голос по языку
       const exact = allVoices.find(v => (v.lang || '').toLowerCase() === lang.toLowerCase());
       if (exact) return exact;
-
       const byPrefix = allVoices.find(v => (v.lang || '').toLowerCase().startsWith(lang.split('-')[0].toLowerCase()));
       if (byPrefix) return byPrefix;
-
       return allVoices[0] || null;
     }
 
@@ -653,7 +523,6 @@
       if (!('speechSynthesis' in window)) return;
 
       stopSpeaking();
-
       const u = new SpeechSynthesisUtterance(text);
       const v = pickVoice();
       if (v) u.voice = v;
@@ -672,19 +541,14 @@
 
     if ('speechSynthesis' in window){
       speechSynthesis.onvoiceschanged = () => rebuildVoiceList();
-      // иногда список готов сразу
       setTimeout(() => rebuildVoiceList(), 200);
     } else {
       voiceSelectEl.innerHTML = '<option value="__auto__">TTS недоступен</option>';
     }
 
-    // -------------------- STT (микрофон) --------------------
-    // 1) если есть SpeechRecognition — используем его
-    // 2) иначе: MediaRecorder -> /stt (Whisper)
-
+    // -------------------- STT --------------------
     const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
     let recognition = null;
-
     let recording = false;
     let recorder = null;
     let recStream = null;
@@ -711,6 +575,12 @@
       });
     }
 
+    function sttIso639(){
+      // whisper docs accept language like "ru" / "en" / "ja"
+      const v = (sttLangEl.value || 'ru-RU').trim();
+      return v.split('-')[0].toLowerCase();
+    }
+
     function extractTextFromSTT(res){
       if (!res) return '';
       if (typeof res.text === 'string') return res.text;
@@ -724,7 +594,11 @@
       const r = await fetch(base + '/stt', {
         method:'POST',
         headers:{ 'Content-Type':'application/json' },
-        body: JSON.stringify({ audio: audioB64 }),
+        body: JSON.stringify({
+          audio: audioB64,
+          language: sttIso639(),
+          vad_filter: true
+        }),
       });
       const data = await r.json().catch(()=> ({}));
       if (!r.ok) throw new Error(data && data.error ? data.error : ('STT HTTP ' + r.status));
@@ -825,7 +699,6 @@
         return;
       }
 
-      // Fallback: MediaRecorder -> Worker STT
       if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia || !window.MediaRecorder){
         showToast('Микрофон недоступен');
         log('No getUserMedia / MediaRecorder');
@@ -864,57 +737,175 @@
       }
     });
 
-    // -------------------- Chat call --------------------
+    // -------------------- Chat (streaming + cancel) --------------------
+    let inflightController = null;
+
+    function setBusy(busy){
+      sendBtn.disabled = busy;
+      micBtn.disabled = busy && recording === false; // если слушаем — не трогаем
+      cancelBtn.disabled = !busy;
+      if (busy){
+        girlImg.src = './gril2.png'; // "говорит"
+      } else {
+        girlImg.src = './gril1.png'; // нейтрал
+      }
+    }
+
     function extractAssistantText(res){
       if (!res) return '';
-      // Workers AI иногда возвращает: { response: "..." }
       if (typeof res.response === 'string') return res.response;
-      // или: { result: { response: "..." } }
       if (res.result && typeof res.result.response === 'string') return res.result.response;
-      // или: OpenAI-like: { choices:[{message:{content}}] }
       const c = res.choices && res.choices[0] && res.choices[0].message && res.choices[0].message.content;
       if (typeof c === 'string') return c;
-      // fallback
       if (typeof res.text === 'string') return res.text;
       return '';
     }
 
+    async function readSSEText(response, onChunk){
+      const reader = response.body.getReader();
+      const dec = new TextDecoder();
+      let buf = '';
+
+      while (true){
+        const { value, done } = await reader.read();
+        if (done) break;
+        buf += dec.decode(value, { stream:true });
+
+        // SSE events separated by \n\n
+        let idx;
+        while ((idx = buf.indexOf('\n\n')) >= 0){
+          const rawEvent = buf.slice(0, idx);
+          buf = buf.slice(idx + 2);
+
+          // Take all data: lines, concatenate with \n (SSE spec)
+          const dataLines = rawEvent
+            .split('\n')
+            .filter(l => l.startsWith('data:'))
+            .map(l => l.slice(5).trimStart());
+
+          if (!dataLines.length) continue;
+          const dataStr = dataLines.join('\n');
+
+          if (dataStr === '[DONE]') return;
+
+          // Cloudflare stream often sends JSON per event
+          let chunk = '';
+          try{
+            const obj = JSON.parse(dataStr);
+            chunk = obj.response ?? obj.delta ?? obj.text ?? '';
+          }catch{
+            chunk = dataStr;
+          }
+
+          if (chunk) onChunk(chunk);
+        }
+      }
+    }
+
+    function buildMessages(userText){
+      const profile = (profileMemEl.value || '').trim();
+      const base = [];
+
+      if (profile){
+        base.push({ role:'system', content: 'Профиль пользователя (локальная заметка):\n' + profile });
+      }
+
+      // Send only last 24 items of history to reduce context.
+      const hist = history.slice(-24).map(m => ({ role: m.role, content: m.content }));
+      return [...base, ...hist, { role:'user', content: userText }];
+    }
+
     async function sendChat(text){
-      const base = apiBase();
       const content = (text || '').trim();
       if (!content) return;
+
+      const base = apiBase();
+      if (!base){
+        addMsg('система', 'Нет Worker base URL', 'sys');
+        return;
+      }
 
       addMsg('Ты', content, 'user', false);
       pushHistory('user', content);
 
-      // строим messages для воркера (память)
-      const messages = history.slice(-24).map(m => ({ role: m.role, content: m.content }));
+      const botMsg = addMsg('она', '…', 'bot', true);
+
+      const messages = buildMessages(content);
+
+      inflightController = new AbortController();
+      setBusy(true);
 
       try{
-        const r = await fetch(base + '/chat', {
-          method:'POST',
-          headers:{ 'Content-Type':'application/json' },
-          body: JSON.stringify({ messages }),
-        });
-        const data = await r.json().catch(()=> ({}));
-        if (!r.ok){
-          const err = data && data.error ? data.error : ('HTTP ' + r.status);
-          addMsg('система', err, 'bot');
-          log('chat error: ' + err);
-          return;
+        const streamOn = streamModeEl.value === 'on';
+        const model = modelSelectEl.value || '@cf/meta/llama-3.3-70b-instruct-fp8-fast';
+
+        if (streamOn && ('ReadableStream' in window)){
+          const r = await fetch(base + '/chat?stream=1', {
+            method:'POST',
+            headers:{ 'Content-Type':'application/json' },
+            body: JSON.stringify({ model, messages }),
+            signal: inflightController.signal,
+          });
+
+          if (!r.ok){
+            const err = await r.text().catch(()=>('HTTP ' + r.status));
+            botMsg.bub.textContent = err;
+            addMsg('система', err, 'sys', false);
+            return;
+          }
+
+          let full = '';
+          await readSSEText(r, (chunk) => {
+            full += chunk;
+            botMsg.bub.textContent = full;
+            stageBubble.textContent = full;
+          });
+
+          const answer = full.trim() || '…';
+          botMsg.bub.textContent = answer;
+          stageBubble.textContent = answer;
+
+          pushHistory('assistant', answer);
+          speak(answer);
+        } else {
+          const r = await fetch(base + '/chat', {
+            method:'POST',
+            headers:{ 'Content-Type':'application/json' },
+            body: JSON.stringify({ model, messages }),
+            signal: inflightController.signal,
+          });
+
+          const data = await r.json().catch(()=> ({}));
+          if (!r.ok){
+            const err = data && data.error ? data.error : ('HTTP ' + r.status);
+            botMsg.bub.textContent = err;
+            addMsg('система', err, 'sys', false);
+            return;
+          }
+
+          const answer = extractAssistantText(data) || '…';
+          botMsg.bub.textContent = answer;
+          stageBubble.textContent = answer;
+
+          pushHistory('assistant', answer);
+          speak(answer);
         }
-
-        const answer = extractAssistantText(data) || '…';
-        addMsg('она', answer, 'bot');
-        pushHistory('assistant', answer);
-        speak(answer);
-
       }catch(e){
-        const err = e && e.message ? e.message : String(e);
-        addMsg('система', err, 'bot');
-        log('chat fetch error: ' + err);
+        const err = e && e.name === 'AbortError' ? 'Остановлено' : (e && e.message ? e.message : String(e));
+        botMsg.bub.textContent = err;
+        addMsg('система', err, 'sys', false);
+        log('chat error: ' + err);
+      } finally {
+        inflightController = null;
+        setBusy(false);
       }
     }
+
+    cancelBtn.addEventListener('click', () => {
+      if (inflightController){
+        try{ inflightController.abort(); }catch{}
+      }
+    });
 
     sendBtn.addEventListener('click', () => {
       const t = msgInput.value;
@@ -923,7 +914,7 @@
     });
 
     msgInput.addEventListener('keydown', (e) => {
-      if (e.key === 'Enter'){
+      if (e.key === 'Enter' && !e.shiftKey){
         e.preventDefault();
         sendBtn.click();
       }
@@ -940,11 +931,12 @@
     healthBtn.addEventListener('click', () => checkHealth());
 
     // -------------------- Init --------------------
+    loadProfile();
     loadHistory();
     renderHistory();
     checkHealth();
 
-    log('Готово. Проверь подключение к воркеру, затем отправь сообщение.');
+    log('Готово. Проверь подключение, затем отправь сообщение.');
   </script>
 </body>
 </html>
