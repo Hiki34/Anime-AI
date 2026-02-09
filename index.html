@@ -3,774 +3,948 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Альт‑девочка — голосовой чат (Cloudflare Workers AI)</title>
+  <title>Альт-девочка — голосовой чат</title>
   <style>
     :root{
-      --bg1:#0b0b12;
-      --bg2:#0f1220;
-      --card:rgba(255,255,255,.06);
-      --card2:rgba(255,255,255,.08);
+      --bg1:#06070b;
+      --bg2:#121035;
+      --card:rgba(20,24,40,.72);
+      --card2:rgba(22,26,44,.55);
       --stroke:rgba(255,255,255,.10);
-      --text:rgba(255,255,255,.92);
-      --muted:rgba(255,255,255,.68);
-      --muted2:rgba(255,255,255,.55);
-      --good:#2bdc74;
-      --bad:#ff4d4d;
-      --warn:#f5c542;
-      --accent:#a855f7;
-      --accent2:#22d3ee;
-      --shadow: 0 14px 60px rgba(0,0,0,.55);
-      --radius:18px;
-      --radius2:22px;
-      --font: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial, "Noto Sans", "Helvetica Neue", sans-serif;
+      --text:#e9ecff;
+      --muted:rgba(233,236,255,.65);
+      --accent:#b176ff;
+      --ok:#23d18b;
+      --warn:#ffd166;
+      --danger:#ff5b5b;
+      --shadow:0 30px 80px rgba(0,0,0,.55);
+      --radius:20px;
+      --radius2:16px;
     }
 
     *{box-sizing:border-box}
     html,body{height:100%}
     body{
       margin:0;
+      font-family:ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial, "Apple Color Emoji", "Segoe UI Emoji";
       color:var(--text);
-      font-family:var(--font);
       background:
-        radial-gradient(900px 600px at 20% 20%, rgba(34,211,238,.16), transparent 60%),
-        radial-gradient(900px 600px at 80% 30%, rgba(168,85,247,.16), transparent 60%),
-        radial-gradient(1000px 800px at 50% 80%, rgba(43,220,116,.08), transparent 60%),
-        linear-gradient(180deg, var(--bg1), var(--bg2));
+        radial-gradient(1000px 700px at 25% 20%, rgba(42,90,45,.35), transparent 60%),
+        radial-gradient(900px 650px at 75% 65%, rgba(120,52,180,.35), transparent 55%),
+        linear-gradient(160deg, var(--bg1), var(--bg2));
       overflow-x:hidden;
     }
 
-    .wrap{max-width:1200px;margin:0 auto;padding:24px 16px 40px;}
+    .wrap{max-width:1180px;margin:0 auto;padding:22px 18px 34px}
 
-    .header{
-      display:flex;align-items:flex-start;justify-content:space-between;gap:16px;
+    .top{
+      display:flex;
+      align-items:flex-start;
+      justify-content:space-between;
+      gap:18px;
       margin-bottom:14px;
     }
 
     .title{
       display:flex;align-items:center;gap:10px;
-      font-weight:800;letter-spacing:.2px;
+      font-weight:700;
+      letter-spacing:.2px;
     }
-    .dot{
-      width:10px;height:10px;border-radius:999px;background:var(--accent);
-      box-shadow:0 0 0 3px rgba(168,85,247,.18);
-    }
-    .subtitle{margin-top:2px;color:var(--muted);font-size:13px;}
+    .dot{width:8px;height:8px;border-radius:99px;background:var(--accent);box-shadow:0 0 20px rgba(177,118,255,.65)}
+
+    .subtitle{font-size:12px;color:var(--muted);margin-top:4px}
 
     .statusPill{
-      display:flex;align-items:center;gap:10px;
-      padding:10px 12px;
-      border-radius:999px;
-      background:rgba(0,0,0,.25);
+      display:inline-flex;
+      align-items:center;
+      gap:10px;
+      padding:10px 14px;
       border:1px solid var(--stroke);
-      box-shadow:var(--shadow);
-      min-width:260px;
-      justify-content:space-between;
+      border-radius:999px;
+      background:rgba(0,0,0,.18);
+      min-width:240px;
+      justify-content:center;
     }
-    .statusLeft{display:flex;align-items:center;gap:10px}
-    .led{width:10px;height:10px;border-radius:999px;background:var(--muted2)}
-    .led.good{background:var(--good); box-shadow:0 0 0 3px rgba(43,220,116,.16)}
-    .led.bad{background:var(--bad); box-shadow:0 0 0 3px rgba(255,77,77,.16)}
-    .statusText{font-size:13px;color:var(--muted)}
+    .led{width:10px;height:10px;border-radius:99px;background:rgba(255,255,255,.2)}
+    .led.ok{background:var(--ok);box-shadow:0 0 18px rgba(35,209,139,.5)}
+    .led.bad{background:var(--danger);box-shadow:0 0 18px rgba(255,91,91,.45)}
 
     .grid{
       display:grid;
-      grid-template-columns: 1.15fr .95fr;
-      gap:18px;
+      grid-template-columns: 1.2fr .8fr;
+      gap:16px;
       align-items:stretch;
     }
+
     @media (max-width: 980px){
       .grid{grid-template-columns:1fr;}
-      .statusPill{min-width:unset; width:100%;}
+      .statusPill{min-width:auto;width:100%}
     }
 
     .card{
       background:var(--card);
       border:1px solid var(--stroke);
-      border-radius:var(--radius2);
+      border-radius:var(--radius);
       box-shadow:var(--shadow);
       overflow:hidden;
-      position:relative;
-      backdrop-filter: blur(10px);
     }
 
-    /* LEFT: character stage */
     .stage{
-      padding:18px;
       min-height:680px;
+      padding:18px;
       display:flex;
       flex-direction:column;
       gap:12px;
     }
 
-    .girlWrap{
+    .stageVisual{
+      flex:1;
+      min-height:520px;
+      display:flex;
+      flex-direction:column;
+      border:1px solid rgba(255,255,255,.08);
+      border-radius:var(--radius2);
+      background:linear-gradient(180deg, rgba(0,0,0,.22), rgba(0,0,0,.06));
+      overflow:hidden;
+    }
+
+    /* Вьюпорт для персонажа — чтобы не "уезжала" и всегда влезала */
+    .girlViewport{
+      position:relative;
       flex:1;
       display:flex;
       align-items:center;
       justify-content:center;
-      border-radius:16px;
-      background:linear-gradient(180deg, rgba(255,255,255,.03), rgba(0,0,0,.08));
-      border:1px solid rgba(255,255,255,.08);
-      overflow:hidden;
       padding:14px 10px;
-      height: 600px; /* важно: чтобы вся фигура помещалась */
+      overflow:hidden;
+      min-height:520px;
     }
-
     #girl{
-      height:100%;
-      max-height: 100%;
-      width:auto;
+      position:absolute;
+      left:50%;
+      top:50%;
+      transform:translate(-50%,-50%);
       max-width:95%;
-      object-fit:contain;
-      filter: drop-shadow(0 18px 44px rgba(0,0,0,.55));
-      transform: translateY(0);
+      max-height:100%;
+      width:auto;
+      height:auto;
+      filter: drop-shadow(0 18px 28px rgba(0,0,0,.5));
       user-select:none;
       pointer-events:none;
     }
 
     .stageBar{
-      display:flex;align-items:center;justify-content:space-between;gap:10px;
-    }
-
-    .bubbleStage{
-      padding:12px 14px;
-      border-radius:16px;
-      background:rgba(0,0,0,.18);
-      border:1px solid rgba(255,255,255,.10);
-      color:var(--muted);
-      font-size:14px;
-      min-height:46px;
-      display:flex;align-items:center;
-    }
-
-    /* RIGHT: chat */
-    .chat{
-      padding:16px;
-      min-height:680px;
-      display:flex;flex-direction:column;
-      gap:12px;
-    }
-
-    .topRow{display:flex;flex-wrap:wrap;gap:10px;align-items:center;}
-
-    .btn{
-      display:inline-flex;align-items:center;gap:8px;
+      border-top:1px solid rgba(255,255,255,.07);
       padding:10px 12px;
-      border-radius:12px;
-      border:1px solid rgba(255,255,255,.12);
-      background:rgba(0,0,0,.25);
-      color:var(--text);
-      cursor:pointer;
-      user-select:none;
-      transition: transform .08s ease, background .15s ease, border-color .15s ease;
-      font-weight:650;
-      font-size:13px;
-    }
-    .btn:hover{background:rgba(0,0,0,.32);border-color:rgba(255,255,255,.18)}
-    .btn:active{transform:translateY(1px)}
-    .btn.green{border-color:rgba(43,220,116,.32)}
-    .btn.red{border-color:rgba(255,77,77,.32)}
-    .btn.purple{border-color:rgba(168,85,247,.32)}
-
-    .toggle{
-      display:inline-flex;align-items:center;gap:8px;
-      padding:9px 12px;
-      border-radius:12px;
-      border:1px solid rgba(255,255,255,.12);
-      background:rgba(0,0,0,.22);
-      font-size:13px;
-      color:var(--muted);
-      user-select:none;
-    }
-    .toggle input{accent-color: var(--good);}
-
-    .settings{
-      padding:12px 12px;
-      border-radius:16px;
-      background:rgba(0,0,0,.18);
-      border:1px solid rgba(255,255,255,.10);
-    }
-    .settings summary{cursor:pointer;color:var(--muted);font-weight:700;}
-    .settingsGrid{
-      margin-top:12px;
-      display:grid;
-      grid-template-columns: 1fr;
+      display:flex;
+      align-items:center;
       gap:10px;
+      justify-content:space-between;
+      background:rgba(0,0,0,.18);
     }
 
-    .field{display:flex;flex-direction:column;gap:6px;}
-    .label{font-size:12px;color:var(--muted)}
-    .input, select{
-      width:100%;
-      border-radius:12px;
-      border:1px solid rgba(255,255,255,.12);
-      background:rgba(0,0,0,.25);
-      color:var(--text);
+    .bubbleSmall{
+      max-width:75%;
       padding:10px 12px;
-      outline:none;
+      border-radius:18px;
+      background:rgba(177,118,255,.18);
+      border:1px solid rgba(177,118,255,.28);
+      color:rgba(233,236,255,.95);
+      font-size:14px;
+      line-height:1.25;
+      white-space:pre-wrap;
     }
-    .row2{display:grid;grid-template-columns:1fr 1fr; gap:10px;}
-    @media(max-width:520px){.row2{grid-template-columns:1fr;}}
 
-    .chatArea{
-      flex:1;
-      overflow:auto;
-      padding:8px 4px 8px;
+    .panel{
+      min-height:680px;
       display:flex;
       flex-direction:column;
-      gap:10px;
     }
 
-    .msg{
-      max-width: 92%;
+    .panelTop{
+      padding:14px 14px 10px;
+      border-bottom:1px solid rgba(255,255,255,.08);
+      background:rgba(0,0,0,.14);
+      display:flex;
+      gap:10px;
+      align-items:center;
+      justify-content:space-between;
+    }
+
+    .btnRow{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+
+    button{
+      appearance:none;
+      border:1px solid rgba(255,255,255,.12);
+      background:rgba(0,0,0,.18);
+      color:var(--text);
       padding:10px 12px;
       border-radius:14px;
-      border:1px solid rgba(255,255,255,.10);
-      background:rgba(255,255,255,.06);
-      line-height:1.25;
-      font-size:14px;
-      white-space:pre-wrap;
-      word-wrap:break-word;
-    }
-    .msg.me{
-      margin-left:auto;
-      background: rgba(34,211,238,.10);
-      border-color: rgba(34,211,238,.18);
-    }
-    .msg.her{
-      margin-right:auto;
-      background: rgba(168,85,247,.10);
-      border-color: rgba(168,85,247,.18);
-    }
-
-    .meta{font-size:11px;color:rgba(255,255,255,.45);margin-bottom:4px;}
-
-    .composer{
-      display:flex;gap:10px;align-items:center;
-      padding-top:10px;
-      border-top:1px solid rgba(255,255,255,.08);
-    }
-    .sendBtn{
-      padding:10px 14px;
-      border-radius:12px;
-      border:1px solid rgba(43,220,116,.28);
-      background: rgba(43,220,116,.10);
-      color:var(--text);
       cursor:pointer;
-      font-weight:800;
+      font-weight:600;
+      transition:transform .06s ease, background .15s ease, border-color .15s ease;
+      user-select:none;
+    }
+    button:hover{background:rgba(255,255,255,.06);border-color:rgba(255,255,255,.18)}
+    button:active{transform:translateY(1px)}
+
+    .btnOk{border-color:rgba(35,209,139,.35)}
+    .btnOk:hover{background:rgba(35,209,139,.10)}
+
+    .btnWarn{border-color:rgba(255,209,102,.35)}
+    .btnWarn:hover{background:rgba(255,209,102,.12)}
+
+    .btnDanger{border-color:rgba(255,91,91,.35)}
+    .btnDanger:hover{background:rgba(255,91,91,.10)}
+
+    .panelBody{
+      padding:14px;
+      display:flex;
+      flex-direction:column;
+      gap:12px;
+      overflow:auto;
+      flex:1;
     }
 
-    .hint{color:var(--muted2);font-size:12px;line-height:1.35;}
+    .section{
+      border:1px solid rgba(255,255,255,.08);
+      border-radius:var(--radius2);
+      background:var(--card2);
+      overflow:hidden;
+    }
 
-    .kbd{font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
-      font-size:12px; padding:1px 6px; border-radius:8px;
+    .sectionHead{
+      padding:10px 12px;
+      display:flex;
+      justify-content:space-between;
+      align-items:center;
+      gap:10px;
+      cursor:pointer;
+      user-select:none;
+      background:rgba(0,0,0,.16);
+      border-bottom:1px solid rgba(255,255,255,.06);
+      color:rgba(233,236,255,.9);
+      font-weight:700;
+      font-size:13px;
+    }
+
+    .sectionContent{padding:12px;display:none;gap:10px;flex-direction:column}
+    .section.open .sectionContent{display:flex}
+
+    label{font-size:12px;color:var(--muted)}
+    select,input[type="text"],input[type="range"]{
+      width:100%;
+      padding:10px 10px;
+      border-radius:12px;
       border:1px solid rgba(255,255,255,.12);
-      background:rgba(0,0,0,.25);
-      color:rgba(255,255,255,.75);
+      background:rgba(0,0,0,.18);
+      color:var(--text);
+      outline:none;
     }
 
-    .pillMini{display:inline-flex;align-items:center;gap:6px; padding:6px 10px; border-radius:999px;
-      border:1px solid rgba(255,255,255,.12); background:rgba(0,0,0,.18); font-size:12px; color:var(--muted);
+    .row{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+    @media (max-width: 980px){ .row{grid-template-columns:1fr} }
+
+    .msg{display:flex;flex-direction:column;gap:4px}
+    .meta{font-size:11px;color:rgba(233,236,255,.55)}
+    .bubble{
+      display:inline-block;
+      padding:10px 12px;
+      border-radius:16px;
+      border:1px solid rgba(255,255,255,.10);
+      background:rgba(0,0,0,.18);
+      max-width:85%;
+      white-space:pre-wrap;
+      line-height:1.28;
+      font-size:14px;
+    }
+    .bubble.user{margin-left:auto;background:rgba(35,209,139,.10);border-color:rgba(35,209,139,.20)}
+    .bubble.bot{margin-right:auto;background:rgba(177,118,255,.12);border-color:rgba(177,118,255,.18)}
+
+    .inputRow{
+      display:flex;gap:8px;align-items:center;
+      padding:12px 14px;
+      border-top:1px solid rgba(255,255,255,.08);
+      background:rgba(0,0,0,.14);
+    }
+    .inputRow input{flex:1}
+
+    .hint{font-size:12px;color:rgba(233,236,255,.55);line-height:1.3}
+
+    .kbd{font-family:ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace; font-size:11px; padding:2px 6px; border:1px solid rgba(255,255,255,.14); border-radius:8px; background:rgba(0,0,0,.22)}
+
+    .toast{
+      position:fixed;
+      right:14px;
+      bottom:14px;
+      padding:10px 12px;
+      border-radius:14px;
+      border:1px solid rgba(255,255,255,.12);
+      background:rgba(0,0,0,.5);
+      color:rgba(233,236,255,.92);
+      box-shadow:0 20px 60px rgba(0,0,0,.6);
+      max-width:min(460px, calc(100vw - 28px));
+      display:none;
+      z-index:50;
     }
 
-    /* scrollbars */
-    .chatArea::-webkit-scrollbar{height:10px;width:10px}
-    .chatArea::-webkit-scrollbar-thumb{background:rgba(255,255,255,.12);border-radius:999px}
-    .chatArea::-webkit-scrollbar-track{background:rgba(0,0,0,.12)}
+    .pill{
+      display:inline-flex;align-items:center;gap:8px;
+      padding:8px 10px;
+      border-radius:999px;
+      border:1px solid rgba(255,255,255,.12);
+      background:rgba(0,0,0,.18);
+      color:rgba(233,236,255,.86);
+      font-size:12px;
+    }
+
+    .switch{
+      display:flex;align-items:center;gap:10px;
+      font-size:12px;color:rgba(233,236,255,.78)
+    }
+    .switch input{width:18px;height:18px}
+
+    .mono{font-family:ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;}
   </style>
 </head>
 <body>
   <div class="wrap">
-    <div class="header">
+    <div class="top">
       <div>
-        <div class="title"><span class="dot"></span><div>
-          <div style="font-size:18px">Альт‑девочка</div>
-          <div class="subtitle">голосовой чат · Cloudflare Workers AI</div>
-        </div></div>
+        <div class="title"><span class="dot"></span> Альт-девочка</div>
+        <div class="subtitle">голосовой чат · Cloudflare Workers AI</div>
       </div>
-
       <div class="statusPill" id="statusPill">
-        <div class="statusLeft">
-          <span class="led" id="led"></span>
-          <span class="statusText" id="statusText">Готово.</span>
-        </div>
-        <span class="pillMini" id="netInfo">—</span>
+        <span class="led" id="led"></span>
+        <span id="statusText">Не проверено</span>
       </div>
     </div>
 
     <div class="grid">
-      <!-- LEFT -->
-      <section class="card stage">
-        <div class="girlWrap" aria-label="Девочка">
-          <img id="girl" src="gril1.png" alt="Аниме‑девочка" />
-        </div>
-        <div class="stageBar">
-          <div class="bubbleStage" id="stageBubble">…</div>
-        </div>
-      </section>
-
-      <!-- RIGHT -->
-      <section class="card chat">
-        <div class="topRow">
-          <button class="btn green" id="micBtn">🎤 Микрофон</button>
-          <button class="btn red" id="stopSpeechBtn" title="Остановить озвучку">🔇 Стоп голос</button>
-          <button class="btn purple" id="healthBtn">🟢 Проверить подключение</button>
-          <label class="toggle" title="Если включено — после распознавания речи сообщение отправится само">
-            <input type="checkbox" id="autoSendStt" checked /> авто‑отправка
-          </label>
-          <button class="btn" id="clearBtn">🧹 Очистить чат</button>
-        </div>
-
-        <details class="settings">
-          <summary>⚙️ Настройки (Workers AI, голос, диагностика)</summary>
-          <div class="settingsGrid">
-            <div class="field">
-              <div class="label">Worker base URL (без /chat). Пример: <span class="kbd">https://girl-chat.sadreevuz.workers.dev</span></div>
-              <input class="input" id="workerBase" placeholder="https://...workers.dev" />
+      <!-- LEFT: персонаж + мини-реплика -->
+      <div class="card">
+        <div class="stage">
+          <div class="stageVisual">
+            <div class="girlViewport">
+              <img id="girl" alt="anime girl" src="./gril1.png" />
             </div>
-
-            <div class="row2">
-              <div class="field">
-                <div class="label">Язык распознавания (STT)</div>
-                <select id="sttLang">
-                  <option value="ru-RU">ru‑RU</option>
-                  <option value="en-US">en‑US</option>
-                  <option value="ja-JP">ja‑JP</option>
-                </select>
-              </div>
-              <div class="field">
-                <div class="label">Голос озвучки (TTS, браузер)</div>
-                <select id="voiceSelect"></select>
-              </div>
-            </div>
-
-            <div class="row2">
-              <div class="field">
-                <div class="label">Скорость озвучки</div>
-                <input class="input" id="rate" type="range" min="0.7" max="1.4" step="0.05" value="1.05" />
-              </div>
-              <div class="field">
-                <div class="label">Высота голоса</div>
-                <input class="input" id="pitch" type="range" min="0.8" max="1.7" step="0.05" value="1.25" />
-              </div>
-            </div>
-
-            <div class="hint" id="diagHint">
-              Если микрофон “слушает”, но текст не появляется — это чаще всего:
-              1) нет поддержки <span class="kbd">SpeechRecognition</span> (в Firefox обычно нет),
-              2) не выдан доступ к микрофону,
-              3) выбран неправильный язык распознавания.
+            <div class="stageBar">
+              <span class="pill">она</span>
+              <div class="bubbleSmall" id="stageBubble">Привет! Как я могу помочь?</div>
             </div>
           </div>
-        </details>
+        </div>
+      </div>
 
-        <div class="chatArea" id="chatArea" aria-label="Чат"></div>
-
-        <div class="composer">
-          <input class="input" id="msgInput" placeholder="Напиши сообщение… (Enter — отправить)" />
-          <button class="sendBtn" id="sendBtn">Отправить</button>
+      <!-- RIGHT: чат + настройки -->
+      <div class="card panel">
+        <div class="panelTop">
+          <div class="btnRow">
+            <button class="btnOk" id="micBtn" title="Речь -> текст">🎙 Микрофон</button>
+            <button id="stopVoiceBtn" title="Остановить озвучку">⏹ Стоп голос</button>
+            <button class="btnOk" id="healthBtn" title="Проверить /health">✅ Проверить подключение</button>
+            <button class="btnWarn" id="clearBtn">🧹 Очистить чат</button>
+          </div>
+          <div class="pill mono" id="modePill">режим: текст</div>
         </div>
 
-        <div class="hint">Подсказка: микрофон распознаёт речь и кладёт текст в поле ввода <span class="kbd">и</span> (если включена авто‑отправка) отправляет сам.</div>
-      </section>
+        <div class="panelBody" id="chatBody">
+          <div class="section open" id="settingsSection">
+            <div class="sectionHead" id="settingsHead">
+              <span>⚙ Настройки (Workers AI, голос, диагностика)</span>
+              <span class="mono" id="settingsChevron">▾</span>
+            </div>
+            <div class="sectionContent">
+              <div>
+                <label>Worker base URL</label>
+                <input id="apiBase" type="text" value="https://girl-chat.sadreevuz.workers.dev" />
+              </div>
+
+              <div class="row">
+                <div>
+                  <label>Озвучка</label>
+                  <select id="ttsMode">
+                    <option value="on" selected>Включена</option>
+                    <option value="off">Выключена</option>
+                  </select>
+                </div>
+                <div>
+                  <label>Язык распознавания</label>
+                  <select id="sttLang">
+                    <option value="ru-RU" selected>ru-RU</option>
+                    <option value="en-US">en-US</option>
+                    <option value="ja-JP">ja-JP</option>
+                  </select>
+                </div>
+              </div>
+
+              <div>
+                <label>Голос (зависит от браузера/ОС)</label>
+                <select id="voiceSelect"></select>
+              </div>
+
+              <div class="row">
+                <div>
+                  <label>Тембр (pitch)</label>
+                  <input id="pitch" type="range" min="0.7" max="1.5" step="0.05" value="1.15" />
+                </div>
+                <div>
+                  <label>Скорость (rate)</label>
+                  <input id="rate" type="range" min="0.7" max="1.3" step="0.05" value="1.0" />
+                </div>
+              </div>
+
+              <div class="switch">
+                <input type="checkbox" id="autoSendVoice" checked />
+                <label for="autoSendVoice">После диктовки сразу отправлять сообщение</label>
+              </div>
+
+              <div class="hint">
+                Если распознавание в браузере недоступно, включится запасной вариант: запись аудио → отправка в воркер → Whisper STT.
+              </div>
+            </div>
+          </div>
+
+          <div class="section open" id="logSection">
+            <div class="sectionHead" id="logHead">
+              <span>🧪 Логи</span>
+              <span class="mono" id="logChevron">▾</span>
+            </div>
+            <div class="sectionContent" id="logBox" style="gap:8px"></div>
+          </div>
+
+          <div class="section" id="chatSection">
+            <div class="sectionHead" id="chatHead">
+              <span>💬 Чат</span>
+              <span class="mono" id="chatChevron">▸</span>
+            </div>
+            <div class="sectionContent" style="display:flex" id="messagesBox"></div>
+          </div>
+        </div>
+
+        <div class="inputRow">
+          <input id="msgInput" type="text" placeholder="Напиши сообщение… (Enter — отправить)" />
+          <button class="btnOk" id="sendBtn">Отправить</button>
+        </div>
+        <div style="padding:0 14px 14px">
+          <div class="hint">
+            Если диктовка не работает в браузере — проверь разрешение на микрофон. Для Firefox веб-распознавание речи часто недоступно.
+          </div>
+        </div>
+      </div>
     </div>
   </div>
 
-<script>
-(() => {
-  // --------- DOM
-  const led = document.getElementById('led');
-  const statusText = document.getElementById('statusText');
-  const netInfo = document.getElementById('netInfo');
-  const stageBubble = document.getElementById('stageBubble');
-  const girl = document.getElementById('girl');
+  <div class="toast" id="toast"></div>
 
-  const micBtn = document.getElementById('micBtn');
-  const stopSpeechBtn = document.getElementById('stopSpeechBtn');
-  const healthBtn = document.getElementById('healthBtn');
-  const clearBtn = document.getElementById('clearBtn');
-  const autoSendStt = document.getElementById('autoSendStt');
+  <script>
+    // -------------------- UI helpers --------------------
+    const $ = (id) => document.getElementById(id);
 
-  const workerBase = document.getElementById('workerBase');
-  const sttLang = document.getElementById('sttLang');
-  const voiceSelect = document.getElementById('voiceSelect');
-  const rate = document.getElementById('rate');
-  const pitch = document.getElementById('pitch');
+    const statusPill = $("statusPill");
+    const led = $("led");
+    const statusText = $("statusText");
+    const modePill = $("modePill");
 
-  const chatArea = document.getElementById('chatArea');
-  const msgInput = document.getElementById('msgInput');
-  const sendBtn = document.getElementById('sendBtn');
+    const apiBaseEl = $("apiBase");
+    const sttLangEl = $("sttLang");
+    const ttsModeEl = $("ttsMode");
+    const voiceSelectEl = $("voiceSelect");
+    const pitchEl = $("pitch");
+    const rateEl = $("rate");
+    const autoSendVoiceEl = $("autoSendVoice");
 
-  // --------- state
-  const LS_SETTINGS = 'altgirl_settings_v2';
-  const LS_CHAT = 'altgirl_chat_v1';
+    const micBtn = $("micBtn");
+    const stopVoiceBtn = $("stopVoiceBtn");
+    const healthBtn = $("healthBtn");
+    const clearBtn = $("clearBtn");
 
-  let isConnected = false;
-  let isListening = false;
-  let recognition = null;
-  let finalTranscript = '';
+    const msgInput = $("msgInput");
+    const sendBtn = $("sendBtn");
 
-  let chat = []; // {role:'user'|'assistant', content:string, ts:number}
+    const stageBubble = $("stageBubble");
+    const girlImg = $("girl");
 
-  // --------- helpers
-  const nowHHMMSS = () => new Date().toLocaleTimeString([], {hour:'2-digit', minute:'2-digit', second:'2-digit'});
+    const logBox = $("logBox");
+    const toast = $("toast");
+    const messagesBox = $("messagesBox");
 
-  function setStatus(text, mode = 'neutral'){
-    statusText.textContent = text;
-    led.classList.remove('good','bad');
-    if (mode === 'good') led.classList.add('good');
-    if (mode === 'bad') led.classList.add('bad');
-  }
-
-  function safeBase(url){
-    return (url || '').trim().replace(/\/+$/, '');
-  }
-
-  function addBubble(who, text, ts){
-    const wrap = document.createElement('div');
-
-    const meta = document.createElement('div');
-    meta.className = 'meta';
-    meta.textContent = `${who === 'me' ? 'ты' : 'она'} · ${ts || nowHHMMSS()}`;
-
-    const bubble = document.createElement('div');
-    bubble.className = `msg ${who === 'me' ? 'me' : 'her'}`;
-    bubble.textContent = text;
-
-    wrap.appendChild(meta);
-    wrap.appendChild(bubble);
-    chatArea.appendChild(wrap);
-    chatArea.scrollTop = chatArea.scrollHeight;
-  }
-
-  function persistChat(){
-    try{
-      // сохраняем только user/assistant
-      const trimmed = chat.slice(-60).map(m => ({ role:m.role, content:m.content, ts:m.ts }));
-      localStorage.setItem(LS_CHAT, JSON.stringify(trimmed));
-    }catch{}
-  }
-
-  function loadChat(){
-    try{
-      const raw = localStorage.getItem(LS_CHAT);
-      if (!raw) return;
-      const parsed = JSON.parse(raw);
-      if (!Array.isArray(parsed)) return;
-      chat = parsed.filter(m => m && (m.role === 'user' || m.role === 'assistant') && typeof m.content === 'string');
-    }catch{}
-  }
-
-  function renderChat(){
-    chatArea.innerHTML = '';
-    for (const m of chat){
-      addBubble(m.role === 'user' ? 'me' : 'her', m.content, m.ts ? new Date(m.ts).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit', second:'2-digit'}) : undefined);
+    function log(line){
+      const el = document.createElement('div');
+      el.className = 'hint';
+      el.textContent = line;
+      logBox.prepend(el);
     }
-    // последняя фраза на сцену
-    const last = [...chat].reverse().find(m => m.role === 'assistant');
-    if (last) stageBubble.textContent = last.content;
-  }
 
-  function setGirlTalking(isTalking){
-    girl.src = isTalking ? 'gril2.png' : 'gril1.png';
-  }
-
-  function speak(text){
-    if (!('speechSynthesis' in window)){
-      setStatus('Озвучка не поддерживается в этом браузере.', 'bad');
-      return;
+    let toastTimer = null;
+    function showToast(text){
+      toast.textContent = text;
+      toast.style.display = 'block';
+      clearTimeout(toastTimer);
+      toastTimer = setTimeout(() => { toast.style.display = 'none'; }, 2400);
     }
-    window.speechSynthesis.cancel();
 
-    const utter = new SpeechSynthesisUtterance(text);
-    utter.rate = Number(rate.value || 1.0);
-    utter.pitch = Number(pitch.value || 1.0);
+    function toggleSection(sectionId){
+      const section = $(sectionId);
+      section.classList.toggle('open');
+      const chevron = section.querySelector('.sectionHead + .sectionContent') ? section.querySelector('.sectionHead').nextElementSibling : null;
+    }
 
-    const voices = window.speechSynthesis.getVoices();
-    const chosen = voices.find(v => v.name === voiceSelect.value);
-    if (chosen) utter.voice = chosen;
+    function makeSectionToggle(sectionId, headId, chevronId){
+      const section = $(sectionId);
+      const head = $(headId);
+      const chev = $(chevronId);
+      head.addEventListener('click', () => {
+        section.classList.toggle('open');
+        const isOpen = section.classList.contains('open');
+        chev.textContent = isOpen ? '▾' : '▸';
+      });
+    }
 
-    utter.onstart = () => { setGirlTalking(true); };
-    utter.onend = () => { setGirlTalking(false); };
-    utter.onerror = () => { setGirlTalking(false); };
+    makeSectionToggle('settingsSection','settingsHead','settingsChevron');
+    makeSectionToggle('logSection','logHead','logChevron');
+    makeSectionToggle('chatSection','chatHead','chatChevron');
 
-    window.speechSynthesis.speak(utter);
-  }
+    // -------------------- Chat state ("обучение" как память сессии) --------------------
+    const STORAGE_KEY = 'altgirl.chat.v2';
+    let history = [];
 
-  function listVoices(){
-    const voices = window.speechSynthesis?.getVoices?.() || [];
-    voiceSelect.innerHTML = '';
+    function loadHistory(){
+      try{
+        const raw = localStorage.getItem(STORAGE_KEY);
+        if (!raw) return;
+        const parsed = JSON.parse(raw);
+        if (Array.isArray(parsed)){
+          history = parsed
+            .filter(m => m && (m.role === 'user' || m.role === 'assistant') && typeof m.content === 'string')
+            .slice(-30);
+        }
+      }catch{}
+    }
 
-    // группируем: сначала ru, потом ja, потом остальное
-    const sorted = [...voices].sort((a,b) => {
-      const score = (v) => (v.lang?.startsWith('ru') ? 0 : v.lang?.startsWith('ja') ? 1 : 2);
-      return score(a) - score(b) || a.name.localeCompare(b.name);
+    function saveHistory(){
+      try{ localStorage.setItem(STORAGE_KEY, JSON.stringify(history.slice(-30))); }catch{}
+    }
+
+    function renderHistory(){
+      messagesBox.innerHTML = '';
+      for (const m of history){
+        addMsg(m.role === 'user' ? 'Ты' : 'она', m.content, m.role === 'user' ? 'user' : 'bot', false);
+      }
+      // автоскролл
+      messagesBox.parentElement.scrollTop = messagesBox.parentElement.scrollHeight;
+    }
+
+    function pushHistory(role, content){
+      history.push({ role, content });
+      if (history.length > 30) history.shift();
+      saveHistory();
+    }
+
+    function addMsg(who, text, cls, alsoStage = true){
+      const wrap = document.createElement('div');
+      wrap.className = 'msg';
+
+      const meta = document.createElement('div');
+      meta.className = 'meta';
+      const t = new Date();
+      const hh = String(t.getHours()).padStart(2,'0');
+      const mm = String(t.getMinutes()).padStart(2,'0');
+      const ss = String(t.getSeconds()).padStart(2,'0');
+      meta.textContent = `${who} · ${hh}:${mm}:${ss}`;
+
+      const bub = document.createElement('div');
+      bub.className = 'bubble ' + (cls || '');
+      bub.textContent = text;
+
+      wrap.appendChild(meta);
+      wrap.appendChild(bub);
+      messagesBox.appendChild(wrap);
+      messagesBox.parentElement.scrollTop = messagesBox.parentElement.scrollHeight;
+
+      if (alsoStage && cls === 'bot'){
+        stageBubble.textContent = text;
+      }
+      if (cls === 'bot'){
+        // смена эмоции по тексту (простая эвристика)
+        const lower = text.toLowerCase();
+        const excited = lower.includes('!') || lower.includes('ха') || lower.includes('хаха') || lower.includes('эмодзи') || lower.includes('😄') || lower.includes('✨');
+        girlImg.src = excited ? './gril2.png' : './gril1.png';
+      }
+    }
+
+    // -------------------- Network --------------------
+    function apiBase(){
+      return (apiBaseEl.value || '').trim().replace(/\/$/,'');
+    }
+
+    async function checkHealth(){
+      const base = apiBase();
+      if (!base){
+        setStatus(false, 'Нет URL');
+        return;
+      }
+      try{
+        const r = await fetch(base + '/health', { method:'GET' });
+        const data = await r.json().catch(()=> ({}));
+        const ok = r.ok && data && data.ok === true;
+        setStatus(ok, ok ? 'Готово.' : 'Ошибка /health');
+        log(`health: HTTP ${r.status} ${ok ? 'ok' : 'fail'}`);
+      }catch(e){
+        setStatus(false, 'Нет связи');
+        log('health error: ' + (e && e.message ? e.message : String(e)));
+      }
+    }
+
+    function setStatus(ok, text){
+      statusText.textContent = text;
+      led.classList.remove('ok','bad');
+      led.classList.add(ok ? 'ok' : 'bad');
+    }
+
+    // -------------------- TTS (браузер) --------------------
+    let voiceReady = false;
+    let allVoices = [];
+
+    function rebuildVoiceList(){
+      allVoices = window.speechSynthesis ? speechSynthesis.getVoices() : [];
+      voiceSelectEl.innerHTML = '';
+
+      const optAuto = document.createElement('option');
+      optAuto.value = '__auto__';
+      optAuto.textContent = 'Авто (лучший подходящий)';
+      voiceSelectEl.appendChild(optAuto);
+
+      for (const v of allVoices){
+        const opt = document.createElement('option');
+        opt.value = v.name;
+        opt.textContent = `${v.name} (${v.lang})`;
+        voiceSelectEl.appendChild(opt);
+      }
+
+      voiceReady = true;
+    }
+
+    function pickVoice(){
+      if (!voiceReady) rebuildVoiceList();
+      const selected = voiceSelectEl.value;
+      const lang = sttLangEl.value || 'ru-RU';
+
+      if (selected && selected !== '__auto__'){
+        return allVoices.find(v => v.name === selected) || null;
+      }
+
+      // Автовыбор: сначала пытаемся найти голос по языку
+      const exact = allVoices.find(v => (v.lang || '').toLowerCase() === lang.toLowerCase());
+      if (exact) return exact;
+
+      const byPrefix = allVoices.find(v => (v.lang || '').toLowerCase().startsWith(lang.split('-')[0].toLowerCase()));
+      if (byPrefix) return byPrefix;
+
+      return allVoices[0] || null;
+    }
+
+    function stopSpeaking(){
+      try{ speechSynthesis.cancel(); }catch{}
+    }
+
+    function speak(text){
+      if (ttsModeEl.value !== 'on') return;
+      if (!('speechSynthesis' in window)) return;
+
+      stopSpeaking();
+
+      const u = new SpeechSynthesisUtterance(text);
+      const v = pickVoice();
+      if (v) u.voice = v;
+      u.lang = sttLangEl.value || 'ru-RU';
+      u.pitch = parseFloat(pitchEl.value || '1');
+      u.rate = parseFloat(rateEl.value || '1');
+      u.volume = 1;
+
+      speechSynthesis.speak(u);
+    }
+
+    stopVoiceBtn.addEventListener('click', () => {
+      stopSpeaking();
+      showToast('Озвучка остановлена');
     });
 
-    for (const v of sorted){
-      const opt = document.createElement('option');
-      opt.value = v.name;
-      opt.textContent = `${v.name} (${v.lang})`;
-      voiceSelect.appendChild(opt);
+    if ('speechSynthesis' in window){
+      speechSynthesis.onvoiceschanged = () => rebuildVoiceList();
+      // иногда список готов сразу
+      setTimeout(() => rebuildVoiceList(), 200);
+    } else {
+      voiceSelectEl.innerHTML = '<option value="__auto__">TTS недоступен</option>';
     }
 
-    // дефолтный голос: сохранённый -> ru -> ja -> первый
-    const saved = loadSettings().voiceName;
-    if (saved && sorted.some(v => v.name === saved)){
-      voiceSelect.value = saved;
-      return;
+    // -------------------- STT (микрофон) --------------------
+    // 1) если есть SpeechRecognition — используем его
+    // 2) иначе: MediaRecorder -> /stt (Whisper)
+
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+    let recognition = null;
+
+    let recording = false;
+    let recorder = null;
+    let recStream = null;
+    let recChunks = [];
+
+    function setMicState(active){
+      recording = active;
+      micBtn.textContent = active ? '🛑 Стоп диктовка' : '🎙 Микрофон';
+      modePill.textContent = active ? 'режим: слушаю…' : 'режим: текст';
+      micBtn.classList.toggle('btnDanger', active);
+      micBtn.classList.toggle('btnOk', !active);
     }
 
-    const ru = sorted.find(v => v.lang?.startsWith('ru'));
-    const ja = sorted.find(v => v.lang?.startsWith('ja'));
-    const pick = ru || ja || sorted[0];
-    if (pick) voiceSelect.value = pick.name;
-  }
-
-  function saveSettings(){
-    try{
-      const payload = {
-        workerBase: safeBase(workerBase.value),
-        sttLang: sttLang.value,
-        voiceName: voiceSelect.value,
-        rate: rate.value,
-        pitch: pitch.value,
-        autoSendStt: autoSendStt.checked
-      };
-      localStorage.setItem(LS_SETTINGS, JSON.stringify(payload));
-    }catch{}
-  }
-
-  function loadSettings(){
-    try{
-      const raw = localStorage.getItem(LS_SETTINGS);
-      if (!raw) return {};
-      return JSON.parse(raw) || {};
-    }catch{ return {}; }
-  }
-
-  function applySettings(){
-    const s = loadSettings();
-    workerBase.value = s.workerBase || 'https://girl-chat.sadreevuz.workers.dev';
-    sttLang.value = s.sttLang || 'ru-RU';
-    rate.value = s.rate || '1.05';
-    pitch.value = s.pitch || '1.25';
-    autoSendStt.checked = (typeof s.autoSendStt === 'boolean') ? s.autoSendStt : true;
-  }
-
-  async function checkHealth(){
-    const base = safeBase(workerBase.value);
-    if (!base){
-      setStatus('Укажи Worker base URL.', 'bad');
-      isConnected = false;
-      netInfo.textContent = '—';
-      return false;
-    }
-
-    setStatus('Проверяю подключение…');
-    const t0 = performance.now();
-    try{
-      const res = await fetch(base + '/health', { method:'GET' });
-      const ms = Math.round(performance.now() - t0);
-      netInfo.textContent = `ping ${ms}ms`;
-
-      if (!res.ok){
-        setStatus(`API ошибка: ${res.status}`, 'bad');
-        isConnected = false;
-        return false;
-      }
-      const data = await res.json().catch(() => ({}));
-      if (data && data.ok === true){
-        setStatus('Подключено.', 'good');
-        isConnected = true;
-        return true;
-      }
-      setStatus('Неожиданный ответ /health.', 'bad');
-      isConnected = false;
-      return false;
-    }catch(err){
-      setStatus('Не могу достучаться до воркера (CORS/сеть).', 'bad');
-      isConnected = false;
-      return false;
-    }
-  }
-
-  async function sendText(text){
-    const base = safeBase(workerBase.value);
-    if (!base){ setStatus('Укажи Worker base URL.', 'bad'); return; }
-
-    const clean = (text || '').trim();
-    if (!clean) return;
-
-    addBubble('me', clean);
-    chat.push({ role:'user', content: clean, ts: Date.now() });
-    persistChat();
-
-    setStatus('Думаю…');
-
-    // берём последние N сообщений для контекста
-    const history = chat
-      .filter(m => m && (m.role === 'user' || m.role === 'assistant') && typeof m.content === 'string')
-      .slice(-14)
-      .map(m => ({ role: m.role, content: m.content }));
-
-    const payload = { text: clean, history };
-
-    try{
-      const res = await fetch(base + '/chat', {
-        method: 'POST',
-        headers: { 'Content-Type':'application/json' },
-        body: JSON.stringify(payload)
+    async function blobToBase64(blob){
+      return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onerror = () => reject(new Error('FileReader error'));
+        reader.onload = () => {
+          const res = String(reader.result || '');
+          const comma = res.indexOf(',');
+          resolve(comma >= 0 ? res.slice(comma + 1) : res);
+        };
+        reader.readAsDataURL(blob);
       });
+    }
 
-      if (!res.ok){
-        const raw = await res.text().catch(() => '');
-        setStatus(`API ошибка ${res.status}: ${raw.slice(0,120)}`, 'bad');
+    function extractTextFromSTT(res){
+      if (!res) return '';
+      if (typeof res.text === 'string') return res.text;
+      if (res.result && typeof res.result.text === 'string') return res.result.text;
+      if (typeof res.transcript === 'string') return res.transcript;
+      return '';
+    }
+
+    async function sttViaWorker(audioB64){
+      const base = apiBase();
+      const r = await fetch(base + '/stt', {
+        method:'POST',
+        headers:{ 'Content-Type':'application/json' },
+        body: JSON.stringify({ audio: audioB64 }),
+      });
+      const data = await r.json().catch(()=> ({}));
+      if (!r.ok) throw new Error(data && data.error ? data.error : ('STT HTTP ' + r.status));
+      return extractTextFromSTT(data);
+    }
+
+    async function startRecorder(){
+      recChunks = [];
+      recStream = await navigator.mediaDevices.getUserMedia({ audio:true });
+
+      const preferredTypes = [
+        'audio/webm;codecs=opus',
+        'audio/webm',
+        'audio/ogg;codecs=opus',
+        'audio/ogg'
+      ];
+      let mime = '';
+      for (const t of preferredTypes){
+        if (window.MediaRecorder && MediaRecorder.isTypeSupported && MediaRecorder.isTypeSupported(t)) { mime = t; break; }
+      }
+
+      recorder = new MediaRecorder(recStream, mime ? { mimeType: mime } : undefined);
+
+      recorder.ondataavailable = (e) => {
+        if (e.data && e.data.size > 0) recChunks.push(e.data);
+      };
+
+      recorder.onstop = async () => {
+        try{
+          const blob = new Blob(recChunks, { type: recorder.mimeType || 'audio/webm' });
+          const b64 = await blobToBase64(blob);
+          showToast('Распознаю…');
+          const text = await sttViaWorker(b64);
+          if (text){
+            msgInput.value = text;
+            log('stt ok: ' + text);
+            if (autoSendVoiceEl.checked){
+              await sendChat(text);
+            } else {
+              showToast('Текст готов (не отправлен)');
+            }
+          } else {
+            showToast('Не распознано');
+          }
+        }catch(e){
+          log('stt error: ' + (e && e.message ? e.message : String(e)));
+          showToast('STT ошибка');
+        } finally {
+          try{ recStream.getTracks().forEach(t => t.stop()); }catch{}
+          recStream = null;
+          recorder = null;
+          recChunks = [];
+        }
+      };
+
+      recorder.start();
+    }
+
+    async function startDictation(){
+      const lang = sttLangEl.value || 'ru-RU';
+
+      if (SpeechRecognition){
+        recognition = new SpeechRecognition();
+        recognition.lang = lang;
+        recognition.interimResults = true;
+        recognition.continuous = false;
+
+        let finalText = '';
+
+        recognition.onresult = (event) => {
+          let interim = '';
+          for (let i = event.resultIndex; i < event.results.length; i++){
+            const part = event.results[i][0].transcript;
+            if (event.results[i].isFinal) finalText += part;
+            else interim += part;
+          }
+          const current = (finalText + ' ' + interim).trim();
+          if (current) msgInput.value = current;
+        };
+
+        recognition.onerror = (e) => {
+          log('SpeechRecognition error: ' + (e && e.error ? e.error : 'unknown'));
+          showToast('Распознавание (браузер) ошибка');
+          stopDictation();
+        };
+
+        recognition.onend = async () => {
+          setMicState(false);
+          const text = (msgInput.value || '').trim();
+          if (text && autoSendVoiceEl.checked){
+            await sendChat(text);
+          }
+        };
+
+        recognition.start();
+        setMicState(true);
+        modePill.textContent = 'режим: слушаю (браузер)…';
         return;
       }
 
-      const data = await res.json();
-      // Workers AI обычно возвращает { response: "..." } (для chat) или похожую структуру.
-      const answer = (data && (data.response || data.result || data.output || data.text))
-        ? String(data.response || data.result || data.output || data.text)
-        : JSON.stringify(data);
-
-      addBubble('her', answer);
-      stageBubble.textContent = answer;
-      chat.push({ role:'assistant', content: answer, ts: Date.now() });
-      persistChat();
-
-      setStatus('Готово.', 'good');
-
-      // озвучка
-      speak(answer);
-
-    }catch(e){
-      setStatus('Ошибка запроса (сеть/CORS).', 'bad');
-    }
-  }
-
-  // --------- STT
-  function startMic(){
-    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-    if (!SpeechRecognition){
-      setStatus('SpeechRecognition не поддерживается этим браузером.', 'bad');
-      return;
-    }
-
-    if (isListening){
-      try{ recognition?.stop?.(); }catch{}
-      return;
-    }
-
-    finalTranscript = '';
-
-    recognition = new SpeechRecognition();
-    recognition.lang = sttLang.value;
-    recognition.continuous = true;
-    recognition.interimResults = true;
-
-    recognition.onstart = () => {
-      isListening = true;
-      micBtn.textContent = '🛑 Стоп микрофон';
-      setStatus('Слушаю… говори.', 'good');
-    };
-
-    recognition.onresult = (event) => {
-      let interim = '';
-      for (let i = event.resultIndex; i < event.results.length; i++){
-        const res = event.results[i];
-        const t = res[0]?.transcript || '';
-        if (res.isFinal) finalTranscript += t;
-        else interim += t;
+      // Fallback: MediaRecorder -> Worker STT
+      if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia || !window.MediaRecorder){
+        showToast('Микрофон недоступен');
+        log('No getUserMedia / MediaRecorder');
+        return;
       }
-      // показываем прямо в поле ввода
-      msgInput.value = (finalTranscript + interim).trim();
-    };
 
-    recognition.onerror = (e) => {
-      // no-speech / not-allowed / audio-capture
-      setStatus(`STT ошибка: ${e.error || 'unknown'}`, 'bad');
-    };
+      await startRecorder();
+      setMicState(true);
+      modePill.textContent = 'режим: слушаю (Whisper)…';
+    }
 
-    recognition.onend = async () => {
-      const txt = (finalTranscript || msgInput.value || '').trim();
-      isListening = false;
-      micBtn.textContent = '🎤 Микрофон';
+    function stopDictation(){
+      if (recognition){
+        try{ recognition.stop(); }catch{}
+        recognition = null;
+        setMicState(false);
+        return;
+      }
+      if (recorder && recorder.state !== 'inactive'){
+        try{ recorder.stop(); }catch{}
+      }
+      setMicState(false);
+    }
 
-      if (txt){
-        setStatus('Речь распознана.', 'good');
-        if (autoSendStt.checked){
-          msgInput.value = '';
-          await sendText(txt);
+    micBtn.addEventListener('click', async () => {
+      if (recording){
+        stopDictation();
+        return;
+      }
+      try{
+        await startDictation();
+      }catch(e){
+        log('mic start error: ' + (e && e.message ? e.message : String(e)));
+        showToast('Ошибка микрофона');
+        setMicState(false);
+      }
+    });
+
+    // -------------------- Chat call --------------------
+    function extractAssistantText(res){
+      if (!res) return '';
+      // Workers AI иногда возвращает: { response: "..." }
+      if (typeof res.response === 'string') return res.response;
+      // или: { result: { response: "..." } }
+      if (res.result && typeof res.result.response === 'string') return res.result.response;
+      // или: OpenAI-like: { choices:[{message:{content}}] }
+      const c = res.choices && res.choices[0] && res.choices[0].message && res.choices[0].message.content;
+      if (typeof c === 'string') return c;
+      // fallback
+      if (typeof res.text === 'string') return res.text;
+      return '';
+    }
+
+    async function sendChat(text){
+      const base = apiBase();
+      const content = (text || '').trim();
+      if (!content) return;
+
+      addMsg('Ты', content, 'user', false);
+      pushHistory('user', content);
+
+      // строим messages для воркера (память)
+      const messages = history.slice(-24).map(m => ({ role: m.role, content: m.content }));
+
+      try{
+        const r = await fetch(base + '/chat', {
+          method:'POST',
+          headers:{ 'Content-Type':'application/json' },
+          body: JSON.stringify({ messages }),
+        });
+        const data = await r.json().catch(()=> ({}));
+        if (!r.ok){
+          const err = data && data.error ? data.error : ('HTTP ' + r.status);
+          addMsg('система', err, 'bot');
+          log('chat error: ' + err);
+          return;
         }
-      } else {
-        setStatus('Не услышал речь. Попробуй ближе к микрофону.', 'bad');
+
+        const answer = extractAssistantText(data) || '…';
+        addMsg('она', answer, 'bot');
+        pushHistory('assistant', answer);
+        speak(answer);
+
+      }catch(e){
+        const err = e && e.message ? e.message : String(e);
+        addMsg('система', err, 'bot');
+        log('chat fetch error: ' + err);
       }
-    };
+    }
 
-    try{ recognition.start(); }
-    catch{ setStatus('Не могу запустить микрофон (разрешения/браузер).', 'bad'); }
-  }
-
-  function stopSpeech(){
-    try{ window.speechSynthesis?.cancel?.(); }catch{}
-    setGirlTalking(false);
-    setStatus('Озвучка остановлена.');
-  }
-
-  // --------- events
-  healthBtn.addEventListener('click', checkHealth);
-  micBtn.addEventListener('click', startMic);
-  stopSpeechBtn.addEventListener('click', stopSpeech);
-
-  sendBtn.addEventListener('click', () => {
-    const t = msgInput.value;
-    msgInput.value = '';
-    sendText(t);
-  });
-
-  msgInput.addEventListener('keydown', (e) => {
-    if (e.key === 'Enter'){
-      e.preventDefault();
+    sendBtn.addEventListener('click', () => {
       const t = msgInput.value;
       msgInput.value = '';
-      sendText(t);
-    }
-  });
+      sendChat(t);
+    });
 
-  clearBtn.addEventListener('click', () => {
-    chat = [];
-    persistChat();
-    chatArea.innerHTML = '';
-    stageBubble.textContent = '…';
-    setStatus('Чат очищен.');
-  });
+    msgInput.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter'){
+        e.preventDefault();
+        sendBtn.click();
+      }
+    });
 
-  for (const el of [workerBase, sttLang, voiceSelect, rate, pitch, autoSendStt]){
-    el.addEventListener('change', saveSettings);
-    el.addEventListener('input', saveSettings);
-  }
+    clearBtn.addEventListener('click', () => {
+      history = [];
+      saveHistory();
+      renderHistory();
+      stageBubble.textContent = 'Чат очищен. Пиши что-нибудь :)';
+      showToast('Чат очищен');
+    });
 
-  // voices
-  if ('speechSynthesis' in window){
-    window.speechSynthesis.onvoiceschanged = () => listVoices();
-    // иногда голоса доступны сразу
-    setTimeout(listVoices, 200);
-  }
+    healthBtn.addEventListener('click', () => checkHealth());
 
-  // init
-  applySettings();
-  loadChat();
-  renderChat();
+    // -------------------- Init --------------------
+    loadHistory();
+    renderHistory();
+    checkHealth();
 
-  // автопроверка
-  setTimeout(checkHealth, 350);
-
-  // первая подсказка
-  if (!chat.length){
-    stageBubble.textContent = 'Привет! Я тут. Нажми «Проверить подключение», потом пиши или говори 🎧';
-  }
-})();
-</script>
+    log('Готово. Проверь подключение к воркеру, затем отправь сообщение.');
+  </script>
 </body>
 </html>
